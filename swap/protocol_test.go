@@ -233,9 +233,7 @@ func TestEmitCheque(t *testing.T) {
 	debitorSwap, cleanDebitorSwap := newTestSwap(t, beneficiaryKey, testBackend)
 	defer cleanDebitorSwap()
 
-	// setup the wait for mined transaction function for testing
-	cleanup := setupContractTest()
-	defer cleanup()
+	creditorSwap.cashoutProcessor.setCashoutDoneChan(testBackend.cashDone)
 
 	log.Debug("deploy to simulated backend")
 
@@ -340,9 +338,6 @@ func TestTriggerPaymentThreshold(t *testing.T) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	// setup the wait for mined transaction function for testing
-	cleanup := setupContractTest()
-	defer cleanup()
 
 	if err = protocolTester.testHandshake(
 		correctSwapHandshakeMsg(debitorSwap),

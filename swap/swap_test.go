@@ -641,10 +641,6 @@ func TestResetBalance(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// setup the wait for mined transaction function for testing
-	cleanup := setupContractTest()
-	defer cleanup()
-
 	// now simulate sending the cheque to the creditor from the debitor
 	if err = creditor.sendCheque(); err != nil {
 		t.Fatal(err)
@@ -667,7 +663,7 @@ func TestResetBalance(t *testing.T) {
 	msg := &EmitChequeMsg{
 		Cheque: cheque,
 	}
-
+	creditorSwap.cashoutProcessor.setCashoutDoneChan(testBackend.cashDone)
 	// ...and trigger message handling on the receiver side (creditor)
 	// remember that debitor is the model of the remote node for the creditor...
 	err = creditorSwap.handleEmitChequeMsg(ctx, debitor, msg)
@@ -692,8 +688,6 @@ func TestResetBalance(t *testing.T) {
 func TestDebtCheques(t *testing.T) {
 	testBackend := newTestBackend(t)
 	defer testBackend.Close()
-	cleanup := setupContractTest()
-	defer cleanup()
 
 	creditorSwap, cleanup := newTestSwap(t, beneficiaryKey, testBackend)
 	defer cleanup()
@@ -744,14 +738,6 @@ func TestDebtCheques(t *testing.T) {
 	// cheque should have gone through
 	if err != nil {
 		t.Fatal(err)
-	}
-
-	// ...on which we wait until the cashCheque is actually terminated (ensures proper nonce count)
-	select {
-	case <-testBackend.cashDone:
-		log.Debug("cash transaction completed and committed")
-	case <-time.After(4 * time.Second):
-		t.Fatalf("Timeout waiting for cash transactions to complete")
 	}
 }
 
@@ -1303,10 +1289,6 @@ func TestSwapLogToFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// setup the wait for mined transaction function for testing
-	cleanup := setupContractTest()
-	defer cleanup()
-
 	// now simulate sending the cheque to the creditor from the debitor
 	if err = creditor.sendCheque(); err != nil {
 		t.Fatal(err)
@@ -1360,8 +1342,6 @@ func TestAvailableBalance(t *testing.T) {
 	defer testBackend.Close()
 	swap, clean := newTestSwap(t, ownerKey, testBackend)
 	defer clean()
-	cleanup := setupContractTest()
-	defer cleanup()
 
 	depositAmount := uint256.FromUint64(9000 * RetrieveRequestPrice)
 
