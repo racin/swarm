@@ -753,7 +753,8 @@ func (s *Server) HandleGetChunk(w http.ResponseWriter, r *http.Request) {
 
 	// check the root chunk exists by retrieving the file's size
 	reader, isEncrypted := s.api.Retrieve(r.Context(), addr)
-	if _, err := reader.Size(r.Context(), nil); err != nil {
+	rootSize, err := reader.Size(r.Context(), nil)
+	if err != nil {
 		getFail.Inc(1)
 		respondError(w, r, fmt.Sprintf("root chunk not found %s: %s", addr, err), http.StatusNotFound)
 		return
@@ -775,22 +776,20 @@ func (s *Server) HandleGetChunk(w http.ResponseWriter, r *http.Request) {
 
 		log.Error("serving content")
 		buf := make([]byte, chunk.DefaultSize)
-		reader.ReadAt(buf, index*chunk.DefaultSize)
-		size, _ := reader.Size(r.Context(), nil)
-		fmt.Fprint(w, path+" HELLO")
-		fmt.Fprint(w, "\n")
-		fmt.Fprint(w, size)
-		fmt.Fprint(w, "\n")
+		n, err := reader.ReadAt(buf, index*chunk.DefaultSize)
+		if err != nil && err != io.EOF {
+			w.Header().Set("Error", err.Error())
+			fmt.Fprint(w, err.Error())
+			return
+		}
+		w.Header().Set("Root-size", strconv.FormatInt(rootSize, 10))
+		w.Header().Set("Chunk-size", strconv.Itoa(n))
 		siz := binary.LittleEndian.Uint64(buf[:8])
 		fmt.Fprint(w, siz)
 		fmt.Fprint(w, "\n")
-		sizeByte := make([]byte, 8)
-		binary.LittleEndian.PutUint64(sizeByte, uint64(size))
-		fmt.Fprint(w, sizeByte)
 		fmt.Fprint(w, "\n")
 		fmt.Fprint(w, buf)
-		//http.ServeContent(w, r, fileName, time.Now(), langos.NewBufferedReadSeeker(reader, getFileBufferSize))
-
+		w.Write(buf)
 	case uri.Hash():
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
