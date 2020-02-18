@@ -21,6 +21,7 @@ package http
 
 import (
 	"bytes"
+	"encoding/binary"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -164,6 +165,12 @@ func NewServer(api *api.API, pinAPI *pin.API, corsString string) *Server {
 	mux.Handle("/bzz-hash:/", methodHandler{
 		"GET": Adapt(
 			http.HandlerFunc(server.HandleGet),
+			defaultMiddlewares...,
+		),
+	})
+	mux.Handle("/bzz-chunk:/", methodHandler{
+		"GET": Adapt(
+			http.HandlerFunc(server.HandleGetChunk),
 			defaultMiddlewares...,
 		),
 	})
@@ -718,6 +725,78 @@ func (s *Server) HandleGetFeed(w http.ResponseWriter, r *http.Request) {
 	log.Debug("Found update", "feed", fd.Hex(), "ruid", ruid)
 	w.Header().Set("Content-Type", api.MimeOctetStream)
 	http.ServeContent(w, r, "", time.Now(), bytes.NewReader(data))
+}
+
+// HandleGetChunk - Special Racin function to get a single chunk.
+// - bzz-chunk://<key> and responds with the raw content stored at the
+//   given storage key
+func (s *Server) HandleGetChunk(w http.ResponseWriter, r *http.Request) {
+	ruid := GetRUID(r.Context())
+	uri := GetURI(r.Context())
+	log.Debug("handle.get", "ruid", ruid, "uri", uri)
+	getCount.Inc(1)
+	_, pass, _ := r.BasicAuth()
+
+	// Save path for later.
+	path := uri.Path
+	uri.Path = ""
+
+	addr, err := s.api.ResolveURI(r.Context(), uri, pass)
+	if err != nil {
+		getFail.Inc(1)
+		respondError(w, r, fmt.Sprintf("cannot resolve %s: %s", uri.Addr, err), http.StatusNotFound)
+		return
+	}
+	w.Header().Set("Cache-Control", "max-age=2147483648, immutable") // url was of type bzz://<hex key>/path, so we are sure it is immutable.
+
+	log.Debug("handle.get: resolved", "ruid", ruid, "key", addr)
+
+	// check the root chunk exists by retrieving the file's size
+	reader, isEncrypted := s.api.Retrieve(r.Context(), addr)
+	if _, err := reader.Size(r.Context(), nil); err != nil {
+		getFail.Inc(1)
+		respondError(w, r, fmt.Sprintf("root chunk not found %s: %s", addr, err), http.StatusNotFound)
+		return
+	}
+
+	switch {
+	case uri.Chunk():
+
+		w.Header().Set("X-Decrypted", fmt.Sprintf("%v", isEncrypted))
+		var index int64
+		if path != "" {
+			index, err = strconv.ParseInt(path, 10, 64)
+		}
+		// allow the request to overwrite the content type using a query
+		// parameter
+		if typ := r.URL.Query().Get("content_type"); typ != "" {
+			w.Header().Set("Content-Type", typ)
+		}
+
+		log.Error("serving content")
+		buf := make([]byte, chunk.DefaultSize)
+		reader.ReadAt(buf, index*chunk.DefaultSize)
+		size, _ := reader.Size(r.Context(), nil)
+		fmt.Fprint(w, path+" HELLO")
+		fmt.Fprint(w, "\n")
+		fmt.Fprint(w, size)
+		fmt.Fprint(w, "\n")
+		siz := binary.LittleEndian.Uint64(buf[:8])
+		fmt.Fprint(w, siz)
+		fmt.Fprint(w, "\n")
+		sizeByte := make([]byte, 8)
+		binary.LittleEndian.PutUint64(sizeByte, uint64(size))
+		fmt.Fprint(w, sizeByte)
+		fmt.Fprint(w, "\n")
+		fmt.Fprint(w, buf)
+		//http.ServeContent(w, r, fileName, time.Now(), langos.NewBufferedReadSeeker(reader, getFileBufferSize))
+
+	case uri.Hash():
+		w.Header().Set("Content-Type", "text/plain")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, addr)
+	}
+
 }
 
 func (s *Server) HandleGetFeedRaw(w http.ResponseWriter, r *http.Request) {
