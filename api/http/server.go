@@ -24,6 +24,21 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/hexutil"
+	"github.com/ethereum/go-ethereum/metrics"
+	"github.com/ethersphere/swarm/api"
+	"github.com/ethersphere/swarm/api/http/langos"
+	"github.com/ethersphere/swarm/bmt"
+	"github.com/ethersphere/swarm/chunk"
+	"github.com/ethersphere/swarm/log"
+	"github.com/ethersphere/swarm/sctx"
+	"github.com/ethersphere/swarm/spancontext"
+	"github.com/ethersphere/swarm/storage"
+	"github.com/ethersphere/swarm/storage/feed"
+	"github.com/ethersphere/swarm/storage/pin"
+	"github.com/rs/cors"
+	"golang.org/x/crypto/sha3"
 	"io"
 	"io/ioutil"
 	"math"
@@ -35,20 +50,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/common/hexutil"
-	"github.com/ethereum/go-ethereum/metrics"
-	"github.com/ethersphere/swarm/api"
-	"github.com/ethersphere/swarm/api/http/langos"
-	"github.com/ethersphere/swarm/chunk"
-	"github.com/ethersphere/swarm/log"
-	"github.com/ethersphere/swarm/sctx"
-	"github.com/ethersphere/swarm/spancontext"
-	"github.com/ethersphere/swarm/storage"
-	"github.com/ethersphere/swarm/storage/feed"
-	"github.com/ethersphere/swarm/storage/pin"
-	"github.com/rs/cors"
 )
 
 var (
@@ -764,9 +765,12 @@ func (s *Server) HandleGetChunk(w http.ResponseWriter, r *http.Request) {
 	case uri.Chunk():
 
 		w.Header().Set("X-Decrypted", fmt.Sprintf("%v", isEncrypted))
-		var index int64
-		if path != "" {
-			index, err = strconv.ParseInt(path, 10, 64)
+		var bufSize int64
+		index, err := strconv.ParseInt(path, 10, 64)
+		if err == nil {
+			bufSize = chunk.DefaultSize
+		} else {
+			bufSize = rootSize
 		}
 		// allow the request to overwrite the content type using a query
 		// parameter
@@ -775,24 +779,31 @@ func (s *Server) HandleGetChunk(w http.ResponseWriter, r *http.Request) {
 		}
 
 		log.Error("serving content")
-		buf := make([]byte, chunk.DefaultSize)
+		buf := make([]byte, bufSize)
 		n, err := reader.ReadAt(buf, index*chunk.DefaultSize)
 		if err != nil && err != io.EOF {
 			w.Header().Set("Error", err.Error())
 			fmt.Fprint(w, err.Error())
 			return
 		}
-		w.Header().Set("Root-size", strconv.FormatInt(rootSize, 10))
-		w.Header().Set("Chunk-size", strconv.Itoa(n))
-		siz := binary.LittleEndian.Uint64(buf[:8])
-		fmt.Fprint(w, siz)
-		fmt.Fprint(w, "\n")
-		fmt.Fprint(w, "\n")
-		fmt.Fprint(w, buf)
-		w.Write(buf)
+		outbuf := make([]byte, n+8)
+		w.Header().Set("Root-size", strconv.FormatInt(bufSize, 10))
+		w.Header().Set("Root-size2", strconv.FormatInt(index*chunk.DefaultSize, 10))
+		binary.LittleEndian.PutUint64(outbuf, uint64(n))
+		copy(outbuf[8:], buf)
+		fmt.Fprint(w, outbuf)
+		rbmt := bmt.NewRefHasher(sha3.NewLegacyKeccak256, int(rootSize/32))
+		fmt.Fprint(w, hexutil.Encode(rbmt.Hash(buf)))
+
+		w.Write(outbuf)
 	case uri.Hash():
 		w.Header().Set("Content-Type", "text/plain")
 		w.WriteHeader(http.StatusOK)
+		hasher := storage.MakeHashFunc(storage.DefaultHash)
+		hasher.Reset()
+		hasher.SetSpanBytes(chunkData[:8]) // 8 bytes of length
+		hasher.Write(chunkData[8:])        // minus 8 []byte length
+		return hasher.Sum(nil)
 		fmt.Fprint(w, addr)
 	}
 
