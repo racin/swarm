@@ -1,4 +1,13 @@
-## v0.6.0 (Unreleased)
+## v0.5.7 (February 20, 2020) (200220!!!1337!!!@)
+
+### Notes
+
+### Commits
+* [#2101](https://github.com/ethersphere/swarm/pull/2101) readme: add godoc shield
+* [#2092](https://github.com/ethersphere/swarm/pull/2092) contract, swap: refactor test backend
+* [#2100](https://github.com/ethersphere/swarm/pull/2100) bmt: fix data races in Hasher
+* [#2097](https://github.com/ethersphere/swarm/pull/2097) bmt, file: Extract AsyncHasher to separate package
+
 
 ## v0.5.6 (February 10, 2020)
 
