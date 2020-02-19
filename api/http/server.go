@@ -762,35 +762,31 @@ func (s *Server) HandleGetChunk(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case uri.Chunk():
-
-		w.Header().Set("X-Decrypted", fmt.Sprintf("%v", isEncrypted))
-		var bufSize int64
-		index, err := strconv.ParseInt(path, 10, 64)
-		if err == nil {
-			bufSize = chunk.DefaultSize
-		} else {
-			bufSize = rootSize
-		}
 		// allow the request to overwrite the content type using a query
 		// parameter
 		if typ := r.URL.Query().Get("content_type"); typ != "" {
 			w.Header().Set("Content-Type", typ)
 		}
-
+		w.Header().Set("X-Decrypted", fmt.Sprintf("%v", isEncrypted))
+		w.Header().Set("Root-size", strconv.FormatInt(rootSize, 10))
 		log.Error("serving content")
-		buf := make([]byte, bufSize)
-		n, err := reader.ReadAt(buf, index*chunk.DefaultSize)
+		index, err := strconv.ParseInt(path, 10, 64)
+		if err != nil {
+			return // Use Get to retrieve all children.
+		}
+
+		buf := make([]byte, chunk.DefaultSize+8)
+		n, err := reader.ReadAt(buf[8:], index*chunk.DefaultSize)
 		if err != nil && err != io.EOF {
 			w.Header().Set("Error", err.Error())
 			fmt.Fprint(w, err.Error())
 			return
 		}
-		outbuf := make([]byte, n+8)
-		w.Header().Set("Root-size", strconv.FormatInt(rootSize, 10))
+
 		w.Header().Set("Chunk-size", strconv.Itoa(n))
-		binary.LittleEndian.PutUint64(outbuf, uint64(n))
-		copy(outbuf[8:], buf)
-		w.Write(outbuf)
+		binary.LittleEndian.PutUint64(buf, uint64(n))
+
+		w.Write(buf)
 		// case uri.Hash():
 		// 	// TODO: Test if this returns correct hash
 		// 	rbmt := bmt.NewRefHasher(sha3.NewLegacyKeccak256, int(rootSize/32))
