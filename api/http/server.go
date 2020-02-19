@@ -771,6 +771,7 @@ func (s *Server) HandleGetChunk(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Root-size", strconv.FormatInt(rootSize, 10))
 		log.Error("serving content")
 		index, err := strconv.ParseInt(path, 10, 64)
+		// TODO - Add special case for when rootSize is less than 4k
 		if err != nil {
 			return // Use Get to retrieve all children.
 		}
