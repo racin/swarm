@@ -389,6 +389,10 @@ func (r *LazyChunkReader) Context() context.Context {
 	return r.ctx
 }
 
+func (r *LazyChunkReader) ChunkData() ChunkData {
+	return r.chunkData
+}
+
 // Size is meant to be called on the LazySectionReader
 func (r *LazyChunkReader) Size(ctx context.Context, quitC chan bool) (n int64, err error) {
 	metrics.GetOrRegisterCounter("lazychunkreader.size", nil).Inc(1)
