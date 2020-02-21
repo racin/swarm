@@ -776,6 +776,8 @@ func (s *Server) HandleGetChunk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	index-- // Make it 1-based indexing to be inline with Snarl
+
 	// Return the requested n-th leaf chunk
 	buf := make([]byte, chunk.DefaultSize+8)
 	n, err := reader.ReadAt(buf[8:], index*chunk.DefaultSize)
