@@ -109,6 +109,7 @@ func GenerateRandomChunks(dataSize int64, count int) (chunks []Chunk) {
 
 // Size, Seek, Read, ReadAt
 type LazySectionReader interface {
+	ChunkData() ChunkData
 	Context() context.Context
 	Size(context.Context, chan bool) (int64, error)
 	io.Seeker
