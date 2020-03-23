@@ -78,11 +78,11 @@ type KadParams struct {
 func NewKadParams() *KadParams {
 	return &KadParams{
 		MaxProxDisplay:    16,
-		NeighbourhoodSize: 2,
+		NeighbourhoodSize: 20,
 		MinBinSize:        2,
-		MaxBinSize:        16,
-		RetryInterval:     4200000000, // 4.2 sec
-		MaxRetries:        42,
+		MaxBinSize:        255,
+		RetryInterval:     012000000, // 4.2 sec
+		MaxRetries:        420,
 		RetryExponent:     2,
 		Capabilities:      capability.NewCapabilities(),
 	}
