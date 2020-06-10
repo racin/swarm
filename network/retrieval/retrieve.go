@@ -234,12 +234,6 @@ func (r *Retrieval) findPeerLB(ctx context.Context, req *storage.Request) (retPe
 				continue
 			}
 
-                                retPeer = lbPeer.Peer
-                                selectedPeerPo = bin.ProximityOrder
-                                lbPeer.AddUseCount()
-
-                                return false
-
 			if myPo < depth { //  chunk is NOT within the neighbourhood
 				if bin.ProximityOrder <= myPo { // always choose a peer strictly closer to chunk than us
 					return false
@@ -349,8 +343,8 @@ func (r *Retrieval) handleChunkDelivery(ctx context.Context, p *Peer, msg *Chunk
 	p.logger.Debug("retrieval.handleChunkDelivery", "ref", msg.Addr)
 	err := p.checkRequest(msg.Ruid, msg.Addr)
 	if err != nil {
-//		unsolicitedChunkDelivery.Inc(1)
-//		return protocols.Break(fmt.Errorf("unsolicited chunk delivery from peer, ruid %d, addr %s: %w", msg.Ruid, msg.Addr, err))
+		unsolicitedChunkDelivery.Inc(1)
+		return protocols.Break(fmt.Errorf("unsolicited chunk delivery from peer, ruid %d, addr %s: %w", msg.Ruid, msg.Addr, err))
 	}
 	var osp opentracing.Span
 	ctx, osp = spancontext.StartSpan(
@@ -395,7 +389,7 @@ func (r *Retrieval) RequestFromPeers(ctx context.Context, req *storage.Request, 
 	r.logger.Debug("retrieval.requestFromPeers", "req.Addr", req.Addr, "localID", localID)
 	metrics.GetOrRegisterCounter("network.retrieve.request_from_peers", nil).Inc(1)
 
-	const maxFindPeerRetries = 20
+	const maxFindPeerRetries = 5
 	retries := 0
 
 FINDPEER:
