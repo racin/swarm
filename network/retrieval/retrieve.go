@@ -389,7 +389,7 @@ func (r *Retrieval) RequestFromPeers(ctx context.Context, req *storage.Request, 
 	r.logger.Debug("retrieval.requestFromPeers", "req.Addr", req.Addr, "localID", localID)
 	metrics.GetOrRegisterCounter("network.retrieve.request_from_peers", nil).Inc(1)
 
-	const maxFindPeerRetries = 5
+	const maxFindPeerRetries = 1000
 	retries := 0
 
 FINDPEER:

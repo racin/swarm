@@ -8,7 +8,7 @@ var FailedPeerSkipDelay = 20 * time.Second
 
 // FetcherGlobalTimeout is the max time a node tries to find a chunk for a client, after which it returns a 404
 // Basically this is the amount of time a singleflight request for a given chunk lives
-var FetcherGlobalTimeout = 10 * time.Second
+var FetcherGlobalTimeout = 100 * time.Second
 
 // FetcherSlowChunkDeliveryThreshold is the threshold above which we log a slow chunk delivery in netstore
 var FetcherSlowChunkDeliveryThreshold = 5 * time.Second
