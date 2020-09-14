@@ -343,8 +343,8 @@ func (r *Retrieval) handleChunkDelivery(ctx context.Context, p *Peer, msg *Chunk
 	p.logger.Debug("retrieval.handleChunkDelivery", "ref", msg.Addr)
 	err := p.checkRequest(msg.Ruid, msg.Addr)
 	if err != nil {
-		unsolicitedChunkDelivery.Inc(1)
-		return protocols.Break(fmt.Errorf("unsolicited chunk delivery from peer, ruid %d, addr %s: %w", msg.Ruid, msg.Addr, err))
+		// unsolicitedChunkDelivery.Inc(1)
+		// return protocols.Break(fmt.Errorf("unsolicited chunk delivery from peer, ruid %d, addr %s: %w", msg.Ruid, msg.Addr, err))
 	}
 	var osp opentracing.Span
 	ctx, osp = spancontext.StartSpan(
