@@ -249,21 +249,21 @@ func (r *Retrieval) findPeerLB(ctx context.Context, req *storage.Request) (retPe
 			// 	}
 			// }
 
-			// if selected peer is not in the depth (2nd condition; if depth <= po, then peer is in nearest neighbourhood)
-			// and they have a lower po than ours, return error
-			if bin.ProximityOrder < myPo && depth > bin.ProximityOrder {
-				err = fmt.Errorf("not asking peers further away from origin; ref=%s originpo=%v po=%v depth=%v myPo=%v", req.Addr.String(), originPo, bin.ProximityOrder, depth, myPo)
-				r.logger.Trace("DDDDDD", "req.Addr", req.Addr)
-				return false
-			}
+			// // if selected peer is not in the depth (2nd condition; if depth <= po, then peer is in nearest neighbourhood)
+			// // and they have a lower po than ours, return error
+			// if bin.ProximityOrder < myPo && depth > bin.ProximityOrder {
+			// 	err = fmt.Errorf("not asking peers further away from origin; ref=%s originpo=%v po=%v depth=%v myPo=%v", req.Addr.String(), originPo, bin.ProximityOrder, depth, myPo)
+			// 	r.logger.Trace("DDDDDD", "req.Addr", req.Addr)
+			// 	return false
+			// }
 
-			// if chunk falls in our nearest neighbourhood (1st condition), but suggested peer is not in
-			// the nearest neighbourhood (2nd condition), don't forward the request to suggested peer
-			if depth <= myPo && depth > bin.ProximityOrder {
-				err = fmt.Errorf("not going outside of depth; ref=%s originpo=%v po=%v depth=%v myPo=%v", req.Addr.String(), originPo, bin.ProximityOrder, depth, myPo)
-				r.logger.Trace("EEEEEEEEE", "req.Addr", req.Addr)
-				return false
-			}
+			// // if chunk falls in our nearest neighbourhood (1st condition), but suggested peer is not in
+			// // the nearest neighbourhood (2nd condition), don't forward the request to suggested peer
+			// if depth <= myPo && depth > bin.ProximityOrder {
+			// 	err = fmt.Errorf("not going outside of depth; ref=%s originpo=%v po=%v depth=%v myPo=%v", req.Addr.String(), originPo, bin.ProximityOrder, depth, myPo)
+			// 	r.logger.Trace("EEEEEEEEE", "req.Addr", req.Addr)
+			// 	return false
+			// }
 
 			retPeer = lbPeer.Peer
 
