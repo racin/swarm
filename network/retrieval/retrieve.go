@@ -236,12 +236,15 @@ func (r *Retrieval) findPeerLB(ctx context.Context, req *storage.Request) (retPe
 
 			if myPo < depth { //  chunk is NOT within the neighbourhood
 				if bin.ProximityOrder <= myPo { // always choose a peer strictly closer to chunk than us
+					r.logger.Trace("AAAAA", "req.Addr", req.Addr)
 					return false
 				}
 			} else { // chunk IS WITHIN neighbourhood
 				if bin.ProximityOrder < depth { // do not select peer outside the neighbourhood. But allows peers further from the chunk than us
+					r.logger.Trace("BBBBBB", "req.Addr", req.Addr)
 					return false
 				} else if bin.ProximityOrder <= originPo { // avoid loop in neighbourhood, so not forward when a request comes from the neighbourhood
+					r.logger.Trace("CCCCCCC", "req.Addr", req.Addr)
 					return false
 				}
 			}
@@ -250,6 +253,7 @@ func (r *Retrieval) findPeerLB(ctx context.Context, req *storage.Request) (retPe
 			// and they have a lower po than ours, return error
 			if bin.ProximityOrder < myPo && depth > bin.ProximityOrder {
 				err = fmt.Errorf("not asking peers further away from origin; ref=%s originpo=%v po=%v depth=%v myPo=%v", req.Addr.String(), originPo, bin.ProximityOrder, depth, myPo)
+				r.logger.Trace("DDDDDD", "req.Addr", req.Addr)
 				return false
 			}
 
@@ -257,6 +261,7 @@ func (r *Retrieval) findPeerLB(ctx context.Context, req *storage.Request) (retPe
 			// the nearest neighbourhood (2nd condition), don't forward the request to suggested peer
 			if depth <= myPo && depth > bin.ProximityOrder {
 				err = fmt.Errorf("not going outside of depth; ref=%s originpo=%v po=%v depth=%v myPo=%v", req.Addr.String(), originPo, bin.ProximityOrder, depth, myPo)
+				r.logger.Trace("EEEEEEEEE", "req.Addr", req.Addr)
 				return false
 			}
 
