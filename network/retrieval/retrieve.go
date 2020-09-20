@@ -407,7 +407,7 @@ FINDPEER:
 
 	protoPeer := r.getPeer(sp.ID())
 	if protoPeer == nil {
-		r.logger.Warn("findPeer returned a peer to skip", "peer", sp.String(), "retry", retries, "ref", req.Addr)
+		r.logger.Info("findPeer returned a peer to skip", "peer", sp.String(), "retry", retries, "ref", req.Addr)
 		req.PeersToSkip.Store(sp.ID().String(), time.Now())
 		retries++
 		if retries == maxFindPeerRetries {

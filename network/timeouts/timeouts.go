@@ -14,7 +14,7 @@ var FetcherGlobalTimeout = 1000 * time.Second
 var FetcherSlowChunkDeliveryThreshold = 5 * time.Second
 
 // SearchTimeout is the max time requests wait for a peer to deliver a chunk, after which another peer is tried
-var SearchTimeout = 1500 * time.Millisecond
+var SearchTimeout = 500 * time.Millisecond
 
 // SyncerClientWaitTimeout is the max time a syncer client waits for a chunk to be delivered during syncing
 var SyncerClientWaitTimeout = 20 * time.Second
