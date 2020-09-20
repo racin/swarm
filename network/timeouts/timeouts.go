@@ -4,7 +4,7 @@ import "time"
 
 // FailedPeerSkipDelay is the time we consider a peer to be skipped for a particular request/chunk,
 // because this peer failed to deliver it during the SearchTimeout interval
-var FailedPeerSkipDelay = 20 * time.Second
+var FailedPeerSkipDelay = 1000 * time.Second
 
 // FetcherGlobalTimeout is the max time a node tries to find a chunk for a client, after which it returns a 404
 // Basically this is the amount of time a singleflight request for a given chunk lives
