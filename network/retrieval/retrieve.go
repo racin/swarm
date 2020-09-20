@@ -265,6 +265,7 @@ func (r *Retrieval) findPeerLB(ctx context.Context, req *storage.Request) (retPe
 				//return false
 			}
 
+			r.logger.Info("Trying peer", "req.Addr", req.Addr, "Peer", id)
 			retPeer = lbPeer.Peer
 
 			// sp could be nil, if we encountered a peer that is not registered for delivery, i.e. doesn't support the `stream` protocol
