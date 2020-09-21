@@ -77,12 +77,12 @@ type KadParams struct {
 // NewKadParams returns a params struct with default values
 func NewKadParams() *KadParams {
 	return &KadParams{
-		MaxProxDisplay:    1002,
-		NeighbourhoodSize: 1002,
-		MinBinSize:        1002,
-		MaxBinSize:        1002,
+		MaxProxDisplay:    16,
+		NeighbourhoodSize: 2,
+		MinBinSize:        2,
+		MaxBinSize:        16,
 		RetryInterval:     4200000000, // 4.2 sec
-		MaxRetries:        10000,
+		MaxRetries:        42,
 		RetryExponent:     2,
 		Capabilities:      capability.NewCapabilities(),
 	}

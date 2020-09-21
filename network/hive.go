@@ -54,7 +54,7 @@ type HiveParams struct {
 func NewHiveParams() *HiveParams {
 	return &HiveParams{
 		Discovery:             true,
-		PeersBroadcastSetSize: 30,
+		PeersBroadcastSetSize: 3,
 		MaxPeersPerRequest:    5,
 		KeepAliveInterval:     500 * time.Millisecond,
 	}
